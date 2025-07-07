@@ -297,6 +297,68 @@ class YourGem::BaseService < ActiveCall::Base
   end
 ```
 
+
+
+
+### Error Messages
+
+You can overwrite the messages to be displayed by adding a locale file in your project and overwrite the messages.
+
+```yaml
+en:
+  activemodel:
+    errors:
+      # The values :model, :attribute and :value are always available for interpolation.
+      # The value :count is available when applicable. Can be used for pluralization.
+      models:
+        active_call/base:
+          bad_gateway: 'Bad Gateway'
+          bad_request: 'Bad Request'
+          client_error: 'Client Error'
+          conflict: 'Conflict'
+          forbidden: 'Forbidden'
+          gateway_timeout: 'Gateway Timeout'
+          gone: 'Gone'
+          internal_server_error: 'Internal Server Error'
+          not_found: 'Not Found'
+          not_acceptable: 'Not Acceptable'
+          not_implemented: 'Not Implemented'
+          proxy_authentication_required: 'Proxy Authentication Required'
+          request_error: 'Request Error'
+          request_timeout: 'Request Timeout'
+          server_error: 'Server Error'
+          service_unavailable: 'Service Unavailable'
+          too_many_requests: 'Too Many Requests'
+          unauthorized: 'Unauthorized'
+          unprocessable_entity: 'Unprocessable Entity'
+```
+
+Then load your locale file if this is not a Rails project.
+
+```ruby
+ActiveSupport.on_load(:i18n) do
+  I18n.load_path << File.expand_path('your_gem/locale/en.yml', __dir__)
+end
+
+```
+
+If the error message to be displayed is read from the response body, you can use `prepend: true` on `validate on: :response` to add the error messages.
+
+```ruby
+class YourGem::BaseService < ActiveCall::Base
+  ...
+
+  validate on: :response, prepend: true do
+    throw :abort if response.is_a?(Enumerable)
+
+    errors.add(:base, :unprocessable_entity, message: response.body.dig('errors', 'detail')) and throw :abort if unprocessable_entity?
+    errors.add(:base, :bad_request, message: response.body.dig('errors', 'detail')) and throw :abort if bad_request?
+    ...
+  end
+```
+
+
+
 ## Development
 
 After checking out the repo, run `bin/setup` to install dependencies. Then, run `rake spec` to run the tests. You can also run `bin/console` for an interactive prompt that will allow you to experiment.
